@@ -32,11 +32,31 @@ Cleaned reads are now ready to proceed to the next step in our pipeline which is
 
 ### 09/16/25: Mapping our cleaned reads to the reference genome
 
-We are using the sister species black spruce (Picea mariana) reference genome published by Lo et al. (2024) to map our red spruce sequecing reads to.
+We are using the sister species black spruce (Picea mariana) reference genome to map our red spruce sequecing reads to.
 
 Reference genome was blasted against our 80,000 exome capture probes to exclude repetitive non-protein coding regions.
 
 The indexed reduced genome used for mapping is in the class shared space:
 
 `/gpfs1/cl/ecogen/pbio6800/PopulationGenomics/ref_genome/Pmariana/Pmariana-genome_reduced.fa`
+
+Mapping was performed using the `bwa-mem2` program in the custom script:
+
+`~/projects/eco_genomics_2025/population_genomics/myscripts/mapping.sh`
+
+Processing the the sequence alignment files (.sam) was performed using the `sambamba` program in the custom script:
+
+`~/projects/eco_genomics_2025/population_genomics/myscripts/process_bam.sh`
+
+This script converted the sam alignment files to a bam format with `view`, sorted the bam files by its read coordinates with `sort`, marked and removed any PCR duplicate reads with `markdup`, and indexed the processed alignment file with `index`.
+
+Mapping statistics were calculated using the `samtools` program in the custom script:
+
+`~/projects/eco_genomics_2025/population_genomics/myscripts/bam_stats.sh`
+
+Basic information about sequence mapping was gather with `flagstat` and depth of coverage was estimated with `depth`.
+
+A simple wrapper bash script was created to run these scripts in a single pipeline:
+
+`~/projects/eco_genomics_2025/population_genomics/myscripts/process_stats_wrapper.sh`
 
