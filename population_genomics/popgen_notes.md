@@ -60,3 +60,13 @@ A simple wrapper bash script was created to run these scripts in a single pipeli
 
 `~/projects/eco_genomics_2025/population_genomics/myscripts/process_stats_wrapper.sh`
 
+Combined mapping statistics and information was saved to a single file:
+
+`~/projects/eco_genomics_2025/population_genomics/myresults/2021.stats.txt`
+
+### 09/18/25: Review bamstats and set up nucleotide diversity estimation using ANGSD
+
+Wrote a short script called `bamstats_review.R` located in `myscripts` to evaluate the mapping success. Approximately 66% of reads were mapped in proper pairs. Obtained depth of coverage between 2-3X. Suggests a probabilistic framework is needed to analyze genotype data.
+
+
+
