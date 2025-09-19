@@ -82,7 +82,11 @@ ANGSD was used to estimate genotype likelihood (GL) estimates and allele frequen
 
 The saf.idx files generated from `ANGSD.sh` contain site allele frequency likelihoods that will be used to estimate the site frequency spectrum (SFS) so that nucleotide diversity and associated statistics may be calculated.
 
-The site frequency spectrum (SFS) and nucleotide diversity statistics were estimated using a custom script:
+The site frequency spectrum (SFS), nucleotide diversity statistics (Watterson’s Theta and Theta Pi), and neutrality statistics (Tajima's D)  were estimated using a custom script:
 
 `~/projects/eco_genomics_2025/population_genomics/myscripts/ANGSD_doTheta.sh`
+
+A simple wrapper bash script was created to run `ANGSD.sh` and `ANGSD_doTheta.sh` in a single pipeline that was submitted to SLURM with the job name `diversity_stats`:
+
+`~/projects/eco_genomics_2025/population_genomics/myscripts/diversity_wrapper.sh`
 
