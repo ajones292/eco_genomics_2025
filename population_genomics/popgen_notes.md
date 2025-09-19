@@ -66,7 +66,23 @@ Combined mapping statistics and information was saved to a single file:
 
 ### 09/18/25: Review bamstats and set up nucleotide diversity estimation using ANGSD
 
-Wrote a short script called `bamstats_review.R` located in `myscripts` to evaluate the mapping success. Approximately 66% of reads were mapped in proper pairs. Obtained depth of coverage between 2-3X. Suggests a probabilistic framework is needed to analyze genotype data.
+Wrote a short script called to evaluate the mapping success:
 
+`~/projects/eco_genomics_2025/population_genomics/myscripts/bamstats_review.R`
 
+Approximately 66% of reads were mapped in proper pairs. Obtained depth of coverage between 2-3X. Suggests a probabilistic framework is needed to analyze genotype data.
+
+Visual inspection of the mapped reads using the alignment viewer `tview` in `samtools` corroborates mapping statistics. Some regions only have 2X coverage.
+
+To account for shallow sequencing, ANGSD will be used for genotype calling. This approach will use genotype likelihood (GL) estimates instead of hard base calling, incorporating this uncertainty into downstream analyses.
+
+ANGSD was used to estimate genotype likelihood (GL) estimates and allele frequencies. A custom script was used to tell ANGSD to make these estimates based on filtering parameters such as sequencing depth, mapping quality, and the numbers of individuals with data:
+
+`~/projects/eco_genomics_2025/population_genomics/myscripts/ANGSD.sh`
+
+The saf.idx files generated from `ANGSD.sh` contain site allele frequency likelihoods that will be used to estimate the site frequency spectrum (SFS) so that nucleotide diversity and associated statistics may be calculated.
+
+The site frequency spectrum (SFS) and nucleotide diversity statistics were estimated using a custom script:
+
+`~/projects/eco_genomics_2025/population_genomics/myscripts/ANGSD_doTheta.sh`
 
