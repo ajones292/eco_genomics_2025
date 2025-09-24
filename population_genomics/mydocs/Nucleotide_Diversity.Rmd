@@ -25,6 +25,7 @@ theta <- read.table("2021_ALL_win50000_step50000.thetas", sep="\t", header=T)
 
 head(theta)
 ```
+
 First, we need to scale our theata by nSites
 
 ```{r}
@@ -35,6 +36,7 @@ theta$tPsite = theta$tP/theta$nSites # scaling Pi by nSites
 
 head(theta)
 ```
+
 ```{r}
 
 summary(theta)
@@ -46,6 +48,7 @@ theta2 <- theta %>%
 summary(theta2)
 
 ```
+
 Let's plot a histogram of how many sites are in each window that got sequenced
 
 ```{r}
@@ -56,7 +59,9 @@ ggplot(theta2, aes(nSites)) +
   labs(title = "Distribution of windows with data", x="Number of sites in 50 kb windows", y="Frequency")
 
 ```
+
 Let's plot nucleotide diversity as Pi
+
 ```{r}
 
 ggplot(theta2, aes(x=Chr, y=tPsite, color=Chr)) +
@@ -65,6 +70,7 @@ ggplot(theta2, aes(x=Chr, y=tPsite, color=Chr)) +
   labs(title="Nucleotide diversity in 50 kb windows for population 2021", x="Scaffold", y="Theta-Pi")
 
 ```
+
 ```{r}
 # compare pi and theta-W together and look for deviation
 
@@ -75,6 +81,7 @@ ggplot(theta2, aes(x=tWsite, y=tPsite, color=Chr)) +
 
 
 ```
+
 Which windows have evidence of negative D and low nucleotide diversity?
 
 ```{r}
@@ -86,6 +93,7 @@ summary(theta2)
 sum(theta2$nSites)
 
 ```
+
 Pull out extremes of Tajima's D
 
 ```{r}
@@ -102,4 +110,3 @@ SmallD = theta2[which(theta2$Tajima==minD),]
 SmallD
 
 ```
-
