@@ -111,3 +111,9 @@ Plotted scaled values for Theta Pi (tPsite) and Watterson's Theta (tWsite) toget
 Extracted the maximum and minimum extremes of Tajima's D.
 
 Across our population, we compared nSites summed across all windows, average tWsite, average tPsite, effective population size as Watterson's theta and Theta Pi, average Tajima's D, and the contigs with the Tajima's D extremes. There appears to be a general trend of increasing theta values and effective population size with increasing latitude.
+
+### 09/25/25: Estimating Fst with Black Spruce
+
+Wrote a custom script to calculate Fst between my red spruce population (2021) and the WISC black spruce population:
+
+`~/projects/eco_genomics_2025/population_genomics/myscripts/ANGSD_Fst.sh`
