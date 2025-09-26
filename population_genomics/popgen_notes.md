@@ -117,3 +117,25 @@ Across our population, we compared nSites summed across all windows, average tWs
 Wrote a custom script to calculate Fst between my red spruce population (2021) and the WISC black spruce population:
 
 `~/projects/eco_genomics_2025/population_genomics/myscripts/ANGSD_Fst.sh`
+
+Generated the weighted, average Fst value across all of the incorporated sequences:
+
+`~/projects/eco_genomics_2025/population_genomics/myresults/2021_WISC_Fst.txt`
+
+There appears to be a general trend of decreasing Fst values with increasing latitude. Comined with the opposite trend observed in the theta values, this suggests hybridization with black spruce in the northern populations.
+
+Created a custom script to use a beagle file containing the genotype likelihoods for all of the samples as input for `PCAngsd`:
+
+`~/projects/eco_genomics_2025/population_genomics/myscripts/PCAngsd_RSBS.sh`
+
+Generated files were placed in a common directory:
+
+`~/projects/eco_genomics_2025/population_genomics/myresults/ANGSD/PCA_ADMIX/`
+
+Used an RMarkdown script that imports the genetic co-variance in `RSBS_poly_K2.cov` needed to generate a PCA and the ancestry scores in `RSBS_poly_K2.admix.2.Q`:
+
+`~/projects/eco_genomics_2025/population_genomics/mydocs/PCA_Admixture.Rmd`
+
+The PCA suggests that there is a general trend along the PC1 axis where red spruce populations move closer to the black spruce populations with increasing latitude. However, there is a noticeable outlier in population 2021.
+
+The ADMIXTURE supports this trend, showing increasing hybridization and gene flow among black and red spruce populations with increasing latitude. There is also stable hybridization present in population 2021. The admixture proportion values suggest that these hybridization events are not recent.
