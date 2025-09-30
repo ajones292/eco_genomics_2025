@@ -3,7 +3,7 @@
 #---------  Slurm preamble, defines the job with #SBATCH statements
 
 # Give your job a name that's meaningful to you, but keep it short
-#SBATCH --job-name=PCANGSD_K3
+#SBATCH --job-name=PCANGSD_allRS
 
 # Name the output file: Re-direct the log file to your home directory
 # The first part of the name (%x) will be whatever you name your job 
@@ -44,15 +44,15 @@ INPUT="/gpfs1/cl/ecogen/pbio6800/PopulationGenomics/ANGSD"
 
 # Make directory and set path to save your output (in your repo):
 
-mkdir ~/projects/eco_genomics_2025/population_genomics/myresults/ANGSD/PCA_ADMIX
+#mkdir ~/projects/eco_genomics_2025/population_genomics/myresults/ANGSD/PCA_ADMIX
 
 OUT="/users/a/j/ajones76/projects/eco_genomics_2025/population_genomics/myresults/ANGSD/PCA_ADMIX"
 
-SUFFIX="RSBS_poly"
+SUFFIX="allRS_poly"
 
 # Make a copy of the list of bam files for all the red + black spruce samples and place in your repo. You'll need this later for making figures.
 
-cp ${INPUT}/RSBS_bam.list ${OUT}
+cp ${INPUT}/allRS_bam.list ${OUT}
 
 
 # Set value of K and number of PCA eigenvalues (=K-1)
@@ -69,4 +69,9 @@ pcangsd -b ${INPUT}/${SUFFIX}.beagle.gz \
         --admix \
         --admix-K $K \
         --maf 0.05 \
+        --selection \
+        --selection-eig $E \
+        --sites-save \
+        --maf-save \
+        --snp-weights \
         --threads 10 

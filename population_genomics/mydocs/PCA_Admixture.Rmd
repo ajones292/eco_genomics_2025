@@ -20,7 +20,7 @@ library(ggpubr)
 First, let's estimate our PCA!
 
 ```{r}
-COV <- as.matrix(read.table("RSBS_poly_K2.cov"))
+COV <- as.matrix(read.table("RSBS_poly_K3.cov"))
 
 PCA <- eigen(COV)
 ```
