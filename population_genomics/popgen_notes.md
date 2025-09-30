@@ -132,10 +132,44 @@ Generated files were placed in a common directory:
 
 `~/projects/eco_genomics_2025/population_genomics/myresults/ANGSD/PCA_ADMIX/`
 
-Used an RMarkdown script that imports the genetic co-variance in `RSBS_poly_K2.cov` needed to generate a PCA and the ancestry scores in `RSBS_poly_K2.admix.2.Q`:
+Used an RMarkdown script that imports the genetic co-variance in `RSBS_poly_K2.cov` needed to generate a PCA and the ancestry scores in `RSBS_poly_K2.admix.2.Q` needed for ADMIXTURE:
 
 `~/projects/eco_genomics_2025/population_genomics/mydocs/PCA_Admixture.Rmd`
 
 The PCA suggests that there is a general trend along the PC1 axis where red spruce populations move closer to the black spruce populations with increasing latitude. However, there is a noticeable outlier in population 2021.
 
 The ADMIXTURE supports this trend, showing increasing hybridization and gene flow among black and red spruce populations with increasing latitude. There is also stable hybridization present in population 2021. The admixture proportion values suggest that these hybridization events are not recent.
+
+### 09/30/25: Genome scan for selection
+
+Re-made PCA plots with red spruce and black spruce population with a K value of 3 by updating PCAngsd script:
+
+`~/projects/eco_genomics_2025/population_genomics/myscripts/PCAngsd_RSBS.sh`
+
+Scree plot revealed a minor increase in the proportion of variance explained by PC2 (1.1% to 2.5%):
+
+`~/projects/eco_genomics_2025/population_genomics/mydocs/PCA_Admixture.Rmd`
+
+Searched for adaptive introgression of black spruce alleles into red spruce populations through an Fst approach. Scan for Fst outliers as candidates for adaptive selection using PCAngsd on just the red spruce populations.
+
+This will allow us to identify whether both the PC1 and PC2 axes are related to the degree of introgression observed in the previous PCA and ADMIXTURE with the red spruce and black spruce populations.
+
+Created a custom script to use a beagle file containing the genotype likelihoods for all of the red spruce samples as input for `PCAngsd` and tell it to test for selection:
+
+`~/projects/eco_genomics_2025/population_genomics/myscripts/PCAngsd_allRS_selection.sh`
+
+Generated files were placed in a common directory:
+
+`~/projects/eco_genomics_2025/population_genomics/myresults/ANGSD/PCA_ADMIX/`
+
+Used an RMarkdown script that imports the genetic co-variance in `allRS_poly_K3.cov` needed to generate a PCA as well as sample metadata from `allRS_bam.list`:
+
+`~/projects/eco_genomics_2025/population_genomics/mydocs/RedSpruce_Selection.Rmd`
+
+Used ancestry scores from `RSBS_poly_K2.admix.2.Q` to determine if PC1 and PC2 are both axes of introgression.
+
+Though PC1 is much more clearly correlated with black spruce ancestry, there is also some degree of evidence to suggest PC2 is also an axis of introgression. Thus both axes should be looked at in our selection analysis.
+
+Read in selection statistics and site positions needed to calculate p-values for each site based on the neutral Chi-Square distribution.
+
+Generated Manhattan plots for PC1 and PC2 separately for each SNP based on p-value scores.
