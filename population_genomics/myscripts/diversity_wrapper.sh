@@ -3,7 +3,7 @@
 #---------  Slurm preamble, defines the job with #SBATCH statements
 
 # Give your job a name that's meaningful to you, but keep it short
-#SBATCH --job-name=diversity_stats
+#SBATCH --job-name=diversity_stats_RunD
 
 # Name the output file: Re-direct the log file to your home directory
 # The first part of the name (%x) will be whatever you name your job 
@@ -31,8 +31,8 @@
 
 # Below here, give you bash script with your list of commands
 
-cd ~/projects/eco_genomics_2025/population_genomics_myscripts
+cd ~/projects/eco_genomics_2025/population_genomics/myscripts
 
-bash ANGSD.sh
+bash ANGSD_RunD.sh
 
-bash ANGSD_doTheta.sh
+bash ANGSD_doTheta_RunD.sh
