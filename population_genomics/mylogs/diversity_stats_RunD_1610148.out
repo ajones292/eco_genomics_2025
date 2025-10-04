@@ -10,3 +10,6 @@ This could either indicate that there really is no data for this chromosome
 Or it could be problem with this program regSize=0 notDone=8
 	-> Printing at chr: JASDQU010010013.1 pos:463697 chunknumber 100 contains 241 sites
 	-> Printing at chr: JASDQU010010137.1 pos:14317 chunknumber 200 contains 9548 sites
+	-> Printing at chr: JASDQU010010231.1 pos:78303 chunknumber 300 contains 453 sites
+	-> Printing at chr: JASDQU010010346.1 pos:1 chunknumber 400 contains 24213 sites
+	-> Printing at chr: JASDQU010010493.1 pos:26804 chunknumber 500 contains 6933 sites
