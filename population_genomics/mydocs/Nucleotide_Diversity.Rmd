@@ -7,7 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir = "~/projects/eco_genomics_2025/population_genomics/myresults/ANGSD/diversity/")
+knitr::opts_knit$set(root.dir = "~/projects/eco_genomics_2025/population_genomics/myresults/ANGSD_RunC/diversity/")
 ```
 
 Import our libraries for plotting
@@ -38,8 +38,6 @@ head(theta)
 ```
 
 ```{r}
-
-summary(theta)
 
 theta2 <- theta %>%
   arrange(Chr, WinCenter) %>%

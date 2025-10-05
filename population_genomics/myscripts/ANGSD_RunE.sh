@@ -8,11 +8,11 @@ module load gcc angsd
 
 ### Set up directories and variables
 
-mkdir ~/projects/eco_genomics_2025/population_genomics/mydata/ANGSD_RunC
+mkdir ~/projects/eco_genomics_2025/population_genomics/mydata/ANGSD_RunE
 
 INPUT="/gpfs1/cl/ecogen/pbio6800/PopulationGenomics/bams"
 
-OUT="/users/a/j/ajones76/projects/eco_genomics_2025/population_genomics/mydata/ANGSD_RunC"
+OUT="/users/a/j/ajones76/projects/eco_genomics_2025/population_genomics/mydata/ANGSD_RunE"
 
 REF="/gpfs1/cl/ecogen/pbio6800/PopulationGenomics/ref_genome/Pmariana/Pmariana1.0-genome_reduced.fa"
 
@@ -42,8 +42,8 @@ angsd -b ${OUT}/${MYPOP}_bam.list \
 -GL 2 \
 -doSaf 1 \
 -doCounts 1 \
--minInd 4 \
--setMinDepthInd 3 \
+-minInd 6 \
+-setMinDepthInd 2 \
 -setMaxDepthInd 40 \
 -setMinDepth 10 \
 -skipTriallelic 1 \

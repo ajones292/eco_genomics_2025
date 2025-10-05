@@ -10,13 +10,13 @@ module load gcc angsd
 
 REPO="/users/a/j/ajones76/projects/eco_genomics_2025/population_genomics"
 
-mkdir ${REPO}/myresults/ANGSD_RunC
+mkdir ${REPO}/myresults/ANGSD_RunE
 
-mkdir ${REPO}/myresults/ANGSD_RunC/diversity
+mkdir ${REPO}/myresults/ANGSD_RunE/diversity
 
-INPUT="${REPO}/mydata/ANGSD_RunC"
+INPUT="${REPO}/mydata/ANGSD_RunE"
 
-OUT="${REPO}/myresults/ANGSD_RunC/diversity"
+OUT="${REPO}/myresults/ANGSD_RunE/diversity"
 
 REF="/gpfs1/cl/ecogen/pbio6800/PopulationGenomics/ref_genome/Pmariana/Pmariana1.0-genome_reduced.fa"
 
