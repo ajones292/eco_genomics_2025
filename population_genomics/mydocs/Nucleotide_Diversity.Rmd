@@ -7,7 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir = "~/projects/eco_genomics_2025/population_genomics/myresults/ANGSD_RunD/diversity/")
+knitr::opts_knit$set(root.dir = "~/projects/eco_genomics_2025/population_genomics/myresults/ANGSD_RunE/diversity/")
 ```
 
 Import our libraries for plotting
@@ -75,8 +75,7 @@ ggplot(theta2, aes(x=Chr, y=tPsite, color=Chr)) +
 ggplot(theta2, aes(x=tWsite, y=tPsite, color=Chr)) +
   geom_point(size=0.75, shape=1, show.legend=F) +
   geom_abline(slope=1, intercept=0, linetype="dashed", color="black") +
-  labs(title="Pairwise differences vs. segregating sites for population 2021", x="Theta-W", y="Theta-Pi")
-
+  labs(x="Theta-W", y="Theta-Pi")
 
 ```
 
