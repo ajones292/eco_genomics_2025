@@ -58,4 +58,14 @@ There is an average of around 2500 of reads mapped to each transcript. The media
 
 Histogram of read mapping shows that there are a couple million reads being mapped to a few transcripts.
 
-Run DESeq2 to test for differential gene expression. Filter out genes with too few reads by removing all genes with counts < 15 in 18 samples.
+Run DESeq2 to test for differential gene expression. Filter out genes with too few reads by removing all genes with counts < 15 in 18 samples. Received a dataset with  14,566 genes.
+
+### 10/16/25
+
+Normalized counts data through variance stabilization to achieve approximately even expression across genes with different expression patterns.
+
+Constructed a heatmap and cluster tree based on sample distance to determine the presence of outliers. There were no obvious outliers.
+
+PCA revealed divergence of G1 and G2 from later generations in both control and treatment groups along PC1 (~32% variance). G1 in treatment groups in most diverged, but G2 moves closer towards the other control and treatment groups from later generations.
+
+Tested for differential gene expression between treatments and generations through pairwise contrasts using the group model. Assessed differential gene expression between control and treatment G1 groups in the most 5 significant genes.
