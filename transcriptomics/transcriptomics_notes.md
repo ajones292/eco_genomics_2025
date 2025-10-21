@@ -68,4 +68,18 @@ Constructed a heatmap and cluster tree based on sample distance to determine the
 
 PCA revealed divergence of G1 and G2 from later generations in both control and treatment groups along PC1 (~32% variance). G1 in treatment groups in most diverged, but G2 moves closer towards the other control and treatment groups from later generations.
 
-Tested for differential gene expression between treatments and generations through pairwise contrasts using the group model. Assessed differential gene expression between control and treatment G1 groups in the most 5 significant genes.
+Tested for differential gene expression between treatments and generations through pairwise contrasts using the group model.
+
+Assessed differential gene expression between control and treatment groups across all of the generations in the most 5 significant genes. For the most part, G2 in the control and treatment groups are going in opposite directions relative to G1, and coming back together in G3 and G4.
+
+### 10/21/25
+
+MA plot reveals there is a general trend of decreasing log-fold-change with increasing magnitude of expression.
+
+Volcano plots showed there was is a positive relationship between log-fold-change and the statistical significance of differential gene expression.
+
+There is a drastic increase in the number of differentially expressed genes between control and treatment groups in G2 that G1. G4 has the least number of differentially expressed genes between control and treatment groups.
+
+Heatmap of genes that are initially differentially expressed in G1 have an opposite expression pattern in G2. This oscillation continues in G3 and G4, though differential gene expression is dampened.
+
+Euler plot of statistically significant differentially expressed genes between control and treatment groups in each generation shows there is a large amount of unique DEGs compared to the number of overlapping DEGs.
