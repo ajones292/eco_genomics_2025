@@ -83,3 +83,23 @@ There is a drastic increase in the number of differentially expressed genes betw
 Heatmap of genes that are initially differentially expressed in G1 have an opposite expression pattern in G2. This oscillation continues in G3 and G4, though differential gene expression is dampened.
 
 Euler plot of statistically significant differentially expressed genes between control and treatment groups in each generation shows there is a large amount of unique DEGs compared to the number of overlapping DEGs.
+
+### 10/23/25
+
+Created an RMarkdown file to implement a functional enrichment analysis using `TopGO` with the differential expression contrasts generated from `DESeq2`:
+
+`~/projects/eco_genomics_2025/transcriptomics/mydocs/DESeq2toTopGO.Rmd`
+
+Histogram distributions of DEG counts follow an exponential decline along an axis of log-adjusted p-value, a pattern supported by the combined density-rugplot. 
+
+Copied `Genes_GO_terms_output.tsv`, which maps each gene to GO categories for the species transcriptome to `mydata` for use as input from `TopGO`:
+
+`~/projects/eco_genomics_2025/transcriptomics/mydata/Genes_GO_terms_output.tsv`
+
+Ran `TopGO` with differential gene expression contrasts between G2 samples and revealed enrichment in cellular movement and transport processes.
+
+Created an output of the `TopGO` enrichment results for visualization in `REViGO`:
+
+`~/projects/eco_genomics_2025/transcriptomics/mydata/topGOsig_for_REVIGO.txt`
+
+There was distinct clustering of GO terms from the same parent ontologies on the semantic space axes.
