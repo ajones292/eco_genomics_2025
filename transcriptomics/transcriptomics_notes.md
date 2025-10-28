@@ -103,3 +103,25 @@ Created an output of the `TopGO` enrichment results for visualization in `REViGO
 `~/projects/eco_genomics_2025/transcriptomics/mydata/topGOsig_for_REVIGO.txt`
 
 There was distinct clustering of GO terms from the same parent ontologies on the semantic space axes.
+
+### 10/28/25
+
+Created an RMarkdown file to conduct WGCNA analysis and create a normalized gene expression matrix from DESeq2:
+
+`~/projects/eco_genomics_2025/transcriptomics/mydocs/DESeq2toWGCNA.Rmd`
+
+Imported the trait data file with the upper lethal temperature associated with each sample into the script:
+
+`~/projects/eco_genomics_2025/transcriptomics/mydata/WGCNA_TraitData.csv`
+
+Filtered dataset based on normalized gene expression variance within the samples of a gene to achieve a subset of 7283 genes.
+
+Visualize scale-free topology model fits to choose an appropriate soft-thresholding power. A values between 18 and 25 appear to provide a strong signed correlation for the scale-free topology index and optimizes mean connectivity.
+
+Convert matrix values to numeric and perform the network construction with a soft-thresholding power of 20. Resultant clustering denodogram showed the degree of correlation between modules in the network.
+
+Assessed correlation between module eigengenes and the upper lethal temperature trait data. Modules labeled as MEcyan and MEgrey60 were significantly correlated with the trait data.
+
+Plotted the eigengene values by treatment and line conditions and found that the eigenvalues for both the grey60 and cyan modules differed in G1 and G2, flipping expression between the two generations.
+
+Gene ontology functional enrichment and visualization in REVIGO revealed there was some association with transcriptional/translational regulation as well as with phosphate-containing protein metabolic processes.
