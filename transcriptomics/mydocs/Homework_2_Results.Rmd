@@ -1,0 +1,186 @@
+---
+title: "Ecological Genomics Homework 2"
+author: "Aidan Jones"
+date: "2025-11-01"
+output: html_document
+---
+
+## Ecological Genomics Homework 2 - Transcriptomics
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "/users/a/j/ajones76/projects/eco_genomics_2025/transcriptomics/mydata")
+```
+
+### Import required libraries and dependencies
+
+```{r}
+library(DESeq2)
+library(topGO)
+library(GO.db)
+library(dplyr)
+library(ggplot2)
+```
+
+## Import counts matrix and sample distibution table
+
+```{r}
+# Import the counts matrix
+countsTable <- read.table("counts_matrix.txt", header=TRUE, row.names=1)
+countsTableRound <- round(countsTable) # Round counts to be compatible with DESeq2
+
+# Import the sample description table
+conds <- read.delim("metadata.txt", header=TRUE, stringsAsFactors = TRUE, row.names=1)
+
+# Corrects the column names to match between the metadata and the counts matrix
+colnames(countsTableRound) <- substr(colnames(countsTableRound), start = 1, stop = 4)
+```
+
+### Run DESeq2 to test for differential gene expression
+
+```{r}
+# Create a DESeq object and define the experimental design here with the tilda
+dds <- DESeqDataSetFromMatrix(countData = countsTableRound, colData=conds, 
+                              design= ~ generation + line + generation:line)
+
+# Filter out genes with too few reads - remove all genes with counts < 15 in more than 75% of 24 samples, so 18 (suggested by WGCNA on RNAseq FAQ)
+dds <- dds[rowSums(counts(dds) >= 15) >= 18,]
+
+# Relevel factors by defining reference for line and generation
+dds$line <- relevel(dds$line, ref = "control")
+dds$generation <- relevel(dds$generation, ref = "G1")
+
+# Run the DESeq model to test for differential gene expression
+dds <- DESeq(dds)
+
+# List the results you've generated
+resultsNames(dds)
+# Copy the results names 
+```
+
+### Set up treatment-only pairwise contrasts between generations
+
+```{r}
+# Extract only generation-specific treatment effects with numeric contrast vectors
+
+# Treatment G1 vs Treatment G2
+res_treatment_G1vG2 <- results(dds, contrast = c(0,1,0,0,0,1,0,0), alpha = 0.05)
+
+# Treatment G1 vs Treatment G3
+res_treatment_G1vG3 <- results(dds, contrast = c(0,0,1,0,0,0,1,0), alpha = 0.05)
+
+# Treatment G1 vs Treatment G4
+res_treatment_G1vG4 <- results(dds, contrast = c(0,0,0,1,0,0,0,1), alpha = 0.05)
+
+# Treatment G2 vs Treatment G3
+res_treatment_G2vG3 <- results(dds, contrast = c(0,-1,1,0,0,-1,1,0), alpha = 0.05)
+
+# Treatment G2 vs Treatment G4
+res_treatment_G2vG4 <- results(dds, contrast = c(0,-1,0,1,0,0,-1,1), alpha = 0.05)
+
+# Treatment G3 vs Treatment G4
+res_treatment_G3vG4 <- results(dds, contrast = c(0,0,-1,1,0,0,-1,1), alpha = 0.05)
+```
+
+## Prepare contrasts and GO terms for TopGO
+
+```{r}
+# Define contrasts
+contrast_list <- list(
+  "G1vG2" = res_treatment_G1vG2,
+  "G1vG3" = res_treatment_G1vG3,
+  "G1vG4" = res_treatment_G1vG4,
+  "G2vG3" = res_treatment_G2vG3,
+  "G2vG4" = res_treatment_G2vG4,
+  "G3vG4" = res_treatment_G3vG4
+)
+
+# Import GO terms file
+tonsa_go <- read.delim("Genes_GO_terms_output.tsv", header = TRUE) %>%
+  slice(-c(1,2)) %>%  # remove header rows if present
+  na.omit()  # remove missing GO annotations
+
+# Create gene2GO list
+gene2GO <- tonsa_go %>%
+  filter(!is.na(GO) & GO != "") %>%
+  group_by(geneID) %>%
+  summarise(GO = list(unique(GO)), .groups = "drop") %>%
+  with(setNames(GO, geneID))
+
+# Split semicolon-separated GO terms
+gene2GO <- lapply(gene2GO, function(x) unlist(strsplit(x, ";")))
+```
+
+## Run topGO for each contrast 
+
+```{r}
+# Function to generate files for input REVIGO
+run_topGO_revigo <- function(res_obj, contrast_name, gene2GO, outfile_prefix="topGO") {
+  
+  # Convert results to data frame and add geneID column from rownames
+  res_df <- as.data.frame(res_obj)
+  res_df$geneID <- rownames(res_df)
+  res_df <- res_df[, c("geneID", setdiff(names(res_df), "geneID"))]
+  
+  # Identify DEGs that have GO annotations
+  res_GO <- res_df[res_df$geneID %in% tonsa_go$geneID, ]
+  
+  # Keep only significant DEGs with GO annotations
+  res_GO_sig <- subset(res_df, padj < 0.05 & abs(log2FoldChange) > 1 & geneID %in% names(gene2GO))
+  
+  # Merge with GO annotations
+  tonsa_stat <- merge(res_GO_sig, tonsa_go, by = "geneID")
+  
+  # Create geneList for topGO: 1 = DEG, 0 = not DEG
+  all_genes <- names(gene2GO)
+  geneList <- setNames(as.integer(all_genes %in% res_GO_sig$geneID), all_genes)
+  
+  # Build TopGO object
+  GOdata <- new("topGOdata",
+                description = paste0("DEGs for ", contrast_name),
+                ontology = "BP",
+                allGenes = geneList,
+                geneSel = function(x) x == 1,
+                nodeSize = 5,
+                annot = annFUN.gene2GO,
+                gene2GO = gene2GO)
+  
+  # Test for enrichment
+  result <- runTest(GOdata, algorithm = "parentChild", statistic = "fisher")
+  
+  # Convert results to table
+  res_table <- GenTable(GOdata, classicFisher = result,
+                        topNodes = length(usedGO(GOdata))) %>%
+    mutate(classicFisher = as.numeric(classicFisher),
+           Annotated = as.numeric(Annotated),
+           Significant = as.numeric(Significant))
+  
+  # Filter GO terms
+  filtered_GO_results <- res_table %>%
+    filter(Annotated >= 5 & Annotated < 500) %>%
+    group_by(Term) %>%
+    slice_min(classicFisher, n = 1) %>%
+    ungroup() %>%
+    arrange(classicFisher)
+  
+  # Prepare REVIGO input
+  revigo_input <- filtered_GO_results[, c("GO.ID", "classicFisher")]
+  sigRes <- revigo_input[as.numeric(revigo_input$classicFisher) < 0.05, ]
+  colnames(sigRes) <- c("GO.ID", "pValue")
+  
+  # Write to file
+  outfile <- paste0(outfile_prefix, "_", contrast_name, "_REVIGO.txt")
+  write.table(sigRes, file = outfile, sep = "\t", row.names = FALSE, quote = FALSE)
+  
+  return(filtered_GO_results)
+}
+
+# Loop through all contrasts
+filtered_GO_results_list <- lapply(names(contrasts_list), function(cn) {
+  run_topGO_revigo(res_obj = contrasts_list[[cn]],
+                   contrast_name = cn,
+                   gene2GO = gene2GO,
+                   outfile_prefix = "topGO")
+})
+names(filtered_GO_results_list) <- names(contrasts_list)
+```
