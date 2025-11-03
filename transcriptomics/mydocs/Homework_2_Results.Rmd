@@ -80,6 +80,13 @@ res_treatment_G2vG4 <- results(dds, contrast = c(0,-1,0,1,0,0,-1,1), alpha = 0.0
 
 # Treatment G3 vs Treatment G4
 res_treatment_G3vG4 <- results(dds, contrast = c(0,0,-1,1,0,0,-1,1), alpha = 0.05)
+
+summary(res_treatment_G1vG2)
+summary(res_treatment_G1vG3)
+summary(res_treatment_G1vG4)
+summary(res_treatment_G2vG3)
+summary(res_treatment_G2vG4)
+summary(res_treatment_G3vG4)
 ```
 
 ## Prepare contrasts and GO terms for TopGO
