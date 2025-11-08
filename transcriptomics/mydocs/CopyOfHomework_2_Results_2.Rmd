@@ -21,6 +21,7 @@ library(GO.db)
 library(dplyr)
 library(ggplot2)
 library(tidyr)
+library(purrr)
 ```
 
 ## Import counts matrix and sample distibution table
@@ -59,7 +60,7 @@ resultsNames(dds)
 # Copy the results names 
 ```
 
-### Set up treatment-only pairwise contrasts between generations
+### Set up contrasts between generations
 
 ```{r}
 # Extract only generation-specific treatment effects with numeric contrast vectors
@@ -87,11 +88,6 @@ res_G3vG4 <- results(dds, contrast = c("generation", "G3", "G4"), alpha = 0.05)
 res_G3vG4 <- res_G3vG4[order(res_G3vG4$padj), ]
 res_G3vG4 <- res_G3vG4[!is.na(res_G3vG4$padj), ]
 degs_G3vG4 <- row.names(res_G3vG4[res_G3vG4$padj < 0.05, ])
-
-summary(res_G1vG1)
-summary(res_G1vG2)
-summary(res_G2vG3)
-summary(res_G3vG4)
 ```
 
 ## Prepare contrasts and GO terms for TopGO
@@ -106,9 +102,10 @@ contrast_list <- list(
 )
 
 # Import GO terms file
-tonsa_go <- read.delim("Genes_GO_terms_output.tsv", header = TRUE) %>%
-  slice(-c(1,2)) %>%  # remove header rows if present
-  na.omit()  # remove missing GO annotations
+tonsa_go <- read.delim("Genes_GO_terms_output.tsv", header = TRUE)
+tonsa_go <- as.data.frame(tonsa_go)
+tonsa_go <- tonsa_go[-c(1,2), ]
+tonsa_go <- na.omit(tonsa_go)
 
 # Create gene2GO list
 gene2GO <- tonsa_go %>%
@@ -121,16 +118,50 @@ gene2GO <- tonsa_go %>%
 gene2GO <- lapply(gene2GO, function(x) unlist(strsplit(x, ";")))
 ```
 
+## Generate volvano plots to Visualize abundance and directionality of differential genes expression
+
+```{r}
+# Function to make a volcano plot from a DESeq2 results object
+make_volcano_plot <- function(res_obj, contrast_name, lfc_thresh = 1, padj_thresh = 0.05) {
+  
+  # Convert to data frame and remove NAs
+  res_df <- as.data.frame(res_obj)
+  res_df$geneID <- rownames(res_df)
+  res_df <- res_df %>% filter(!is.na(padj))
+  
+  # Add significance column for color mapping
+  res_df$significance <- "Not Sig"
+  res_df$significance[res_df$padj < 0.05 & res_df$log2FoldChange > 0] <- "Up"
+  res_df$significance[res_df$padj < 0.05 & res_df$log2FoldChange < 0] <- "Down"
+  
+  # Create volcano plot
+  p <- ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) +
+    geom_point(alpha = 0.7, size = 2) +
+    scale_color_manual(values = c("Up" = "red", "Down" = "blue", "Not Sig" = "grey")) +
+    geom_vline(xintercept = c(-1, 1), linetype = "dashed", color = "black") +
+    geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "black") +
+    labs(
+      title = paste0("Volcano Plot: ", contrast_name),
+      x = expression(log[2]~Fold~Change),
+      y = expression(-log[10]~Adjusted~p~value)
+    ) +
+    theme_bw(base_size = 16) +
+    theme(legend.title = element_blank(),
+          plot.title = element_text(hjust = 0.5))
+  
+  return(p)
+}
+
+# Display all plots
+volcano_plots <- map2(contrast_list, names(contrast_list),
+                      ~make_volcano_plot(.x, .y))
+volcano_plots
+```
+
 ## Run TopGO for each contrast
 
 ```{r}
-library(topGO)
-library(GO.db)
-library(dplyr)
-library(ggplot2)
-library(purrr)
-
-# Define reusable TopGO function
+# Define TopGO function
 run_topGO_plot <- function(res_obj, contrast_name, gene2GO, outfile_prefix="topGO") {
   
   # Convert results to data frame and add geneID
@@ -180,7 +211,7 @@ run_topGO_plot <- function(res_obj, contrast_name, gene2GO, outfile_prefix="topG
   outfile <- paste0(outfile_prefix, "_", contrast_name, "_REVIGO.txt")
   write.table(revigo_input, file = outfile, sep = "\t", row.names = FALSE, quote = FALSE)
   
-  # Generate plot
+  # Generate TopGO plot
   p <- filtered_GO_results %>%
     slice_head(n = 30) %>%
     ggplot(aes(x = -log10(classicFisher),
@@ -205,13 +236,5 @@ run_topGO_plot <- function(res_obj, contrast_name, gene2GO, outfile_prefix="topG
 # Run TopGO for all contrasts
 topGO_plots <- map2(contrast_list, names(contrast_list),
                     ~run_topGO_plot(.x, .y, gene2GO))
-
-# Display plots
 topGO_plots
-
-# Save plots to files
-walk2(topGO_plots, names(topGO_plots),
-      ~ggsave(filename = paste0("TopGO_", .y, ".png"), plot = .x,
-              width = 8, height = 10, dpi = 300))
-
 ```
