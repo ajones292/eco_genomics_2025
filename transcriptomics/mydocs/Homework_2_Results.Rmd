@@ -20,6 +20,7 @@ library(topGO)
 library(GO.db)
 library(dplyr)
 library(ggplot2)
+library(tidyr)
 ```
 
 ## Import counts matrix and sample distibution table
@@ -65,21 +66,39 @@ resultsNames(dds)
 
 # Treatment G1 vs Treatment G2
 res_treatment_G1vG2 <- results(dds, contrast = c(0,1,0,0,0,1,0,0), alpha = 0.05)
+res_treatment_G1vG2 <- res_treatment_G1vG2[order(res_treatment_G1vG2$padj),]
+res_treatment_G1vG2 <- res_treatment_G1vG2[!is.na(res_treatment_G1vG2$padj),]
+degs_treatment_G1vG2 <- row.names(res_treatment_G1vG2[res_treatment_G1vG2$padj < 0.05,])
 
 # Treatment G1 vs Treatment G3
 res_treatment_G1vG3 <- results(dds, contrast = c(0,0,1,0,0,0,1,0), alpha = 0.05)
+res_treatment_G1vG3 <- res_treatment_G1vG3[order(res_treatment_G1vG3$padj),]
+res_treatment_G1vG3 <- res_treatment_G1vG3[!is.na(res_treatment_G1vG3$padj),]
+degs_treatment_G1vG3 <- row.names(res_treatment_G1vG3[res_treatment_G1vG3$padj < 0.05,])
 
 # Treatment G1 vs Treatment G4
 res_treatment_G1vG4 <- results(dds, contrast = c(0,0,0,1,0,0,0,1), alpha = 0.05)
+res_treatment_G1vG4 <- res_treatment_G1vG4[order(res_treatment_G1vG4$padj),]
+res_treatment_G1vG4 <- res_treatment_G1vG4[!is.na(res_treatment_G1vG4$padj),]
+degs_treatment_G1vG4 <- row.names(res_treatment_G1vG4[res_treatment_G1vG4$padj < 0.05,])
 
 # Treatment G2 vs Treatment G3
 res_treatment_G2vG3 <- results(dds, contrast = c(0,-1,1,0,0,-1,1,0), alpha = 0.05)
+res_treatment_G2vG3 <- res_treatment_G2vG3[order(res_treatment_G2vG3$padj),]
+res_treatment_G2vG3 <- res_treatment_G2vG3[!is.na(res_treatment_G2vG3$padj),]
+degs_treatment_G2vG3 <- row.names(res_treatment_G2vG3[res_treatment_G2vG3$padj < 0.05,])
 
 # Treatment G2 vs Treatment G4
 res_treatment_G2vG4 <- results(dds, contrast = c(0,-1,0,1,0,0,-1,1), alpha = 0.05)
+res_treatment_G2vG4 <- res_treatment_G2vG4[order(res_treatment_G2vG4$padj),]
+res_treatment_G2vG4 <- res_treatment_G2vG4[!is.na(res_treatment_G2vG4$padj),]
+degs_treatment_G2vG4 <- row.names(res_treatment_G2vG4[res_treatment_G2vG4$padj < 0.05,])
 
 # Treatment G3 vs Treatment G4
 res_treatment_G3vG4 <- results(dds, contrast = c(0,0,-1,1,0,0,-1,1), alpha = 0.05)
+res_treatment_G3vG4 <- res_treatment_G3vG4[order(res_treatment_G3vG4$padj),]
+res_treatment_G3vG4 <- res_treatment_G3vG4[!is.na(res_treatment_G3vG4$padj),]
+degs_treatment_G3vG4 <- row.names(res_treatment_G3vG4[res_treatment_G3vG4$padj < 0.05,])
 
 summary(res_treatment_G1vG2)
 summary(res_treatment_G1vG3)
@@ -191,3 +210,118 @@ filtered_GO_results_list <- lapply(names(contrasts_list), function(cn) {
 })
 names(filtered_GO_results_list) <- names(contrasts_list)
 ```
+
+```{r}
+library(topGO)
+library(GO.db)
+library(dplyr)
+library(ggplot2)
+library(purrr)
+
+### 1. Define a reusable TopGO function
+run_topGO_plot <- function(res_obj, contrast_name, tonsa_go, gene2GO) {
+  
+  # Convert results to data frame
+  res_df <- as.data.frame(res_obj)
+  res_df$geneID <- rownames(res_df)
+  
+  # Filter for DEGs with padj < 0.05 and |log2FC| > 1
+  res_sig <- subset(res_df, padj < 0.05 & abs(log2FoldChange) > 1)
+  
+  # Merge with GO annotations
+  tonsa_stat <- merge(res_sig, tonsa_go, by = "geneID")
+  
+  # Create gene list for topGO (1 = DEG, 0 = not DEG)
+  all_genes <- names(gene2GO)
+  geneList <- setNames(as.integer(all_genes %in% tonsa_stat$geneID), all_genes)
+  
+  # Build topGO object
+  GOdata <- new("topGOdata",
+                description = paste0("DEGs for ", contrast_name),
+                ontology = "BP",
+                allGenes = geneList,
+                geneSel = function(x) x == 1,
+                nodeSize = 5,
+                annot = annFUN.gene2GO,
+                gene2GO = gene2GO)
+  
+  # Run enrichment
+  result <- runTest(GOdata, algorithm = "parentChild", statistic = "fisher")
+  
+  # Convert to table and clean
+  res_table <- GenTable(GOdata, classicFisher = result,
+                        topNodes = length(usedGO(GOdata))) %>%
+    mutate(classicFisher = as.numeric(classicFisher),
+           Annotated = as.numeric(Annotated),
+           Significant = as.numeric(Significant)) %>%
+    filter(Annotated >= 5 & Annotated < 500) %>%
+    group_by(Term) %>%
+    slice_min(classicFisher, n = 1) %>%
+    ungroup() %>%
+    arrange(classicFisher)
+  
+  # Generate ggplot
+  p <- res_table %>%
+    slice_head(n = 30) %>%
+    ggplot(aes(x = -log10(classicFisher),
+               y = reorder(Term, -log10(classicFisher)),
+               size = Significant,
+               color = -log10(classicFisher))) +
+    geom_point(alpha = 0.8) +
+    scale_color_gradientn(
+      colors = c("pink", "orchid", "purple", "purple4"),
+      name = "-log10(p-value)"
+    ) +
+    scale_size_continuous(name = "# Significant Genes") +
+    labs(title = paste("GO Enrichment for", contrast_name),
+         x = "-log10(classicFisher)", y = "Biological Function") +
+    theme_minimal() +
+    theme(plot.margin = margin(10, 100, 10, 10),
+          axis.text.y = element_text(size = 10, hjust = 1)) +
+    coord_cartesian(clip = "off")
+  
+  return(p)
+}
+
+
+### 2. Prepare GO annotation inputs (run once)
+tonsa_go <- read.delim("Genes_GO_terms_output.tsv", header = TRUE) %>%
+  slice(-c(1,2)) %>%
+  na.omit()
+
+gene2GO <- tonsa_go %>%
+  filter(!is.na(GO) & GO != "") %>%
+  group_by(geneID) %>%
+  summarise(GO = list(unique(GO)), .groups = "drop") %>%
+  with(setNames(GO, geneID))
+
+gene2GO <- lapply(gene2GO, function(x) unlist(strsplit(x, ";")))
+
+
+### 3. Run across all six contrasts
+contrast_list <- list(
+  "G1vG2" = res_treatment_G1vG2,
+  "G1vG3" = res_treatment_G1vG3,
+  "G1vG4" = res_treatment_G1vG4,
+  "G2vG3" = res_treatment_G2vG3,
+  "G2vG4" = res_treatment_G2vG4,
+  "G3vG4" = res_treatment_G3vG4
+)
+
+# Run TopGO and create plots for each contrast
+topGO_plots <- map2(contrast_list, names(contrast_list),
+                    ~run_topGO_plot(.x, .y, tonsa_go, gene2GO))
+
+
+### 4. Display plots or save them
+# To display all plots in sequence:
+topGO_plots
+
+# Or save them to files
+walk2(topGO_plots, names(topGO_plots),
+      ~ggsave(filename = paste0("TopGO_", .y, ".png"), plot = .x,
+              width = 8, height = 10, dpi = 300))
+
+```
+```
+

@@ -1,0 +1,217 @@
+---
+title: "Ecological Genomics Homework 2"
+author: "Aidan Jones"
+date: "2025-11-01"
+output: html_document
+---
+
+## Ecological Genomics Homework 2 - Transcriptomics
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "/users/a/j/ajones76/projects/eco_genomics_2025/transcriptomics/mydata")
+```
+
+### Import required libraries and dependencies
+
+```{r}
+library(DESeq2)
+library(topGO)
+library(GO.db)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+```
+
+## Import counts matrix and sample distibution table
+
+```{r}
+# Import the counts matrix
+countsTable <- read.table("counts_matrix.txt", header=TRUE, row.names=1)
+countsTableRound <- round(countsTable) # Round counts to be compatible with DESeq2
+
+# Import the sample description table
+conds <- read.delim("metadata.txt", header=TRUE, stringsAsFactors = TRUE, row.names=1)
+
+# Corrects the column names to match between the metadata and the counts matrix
+colnames(countsTableRound) <- substr(colnames(countsTableRound), start = 1, stop = 4)
+```
+
+### Run DESeq2 to test for differential gene expression
+
+```{r}
+# Create a DESeq object and define the experimental design here with the tilda
+dds <- DESeqDataSetFromMatrix(countData = countsTableRound, colData=conds, 
+                              design= ~ generation + line + generation:line)
+
+# Filter out genes with too few reads - remove all genes with counts < 15 in more than 75% of 24 samples, so 18 (suggested by WGCNA on RNAseq FAQ)
+dds <- dds[rowSums(counts(dds) >= 15) >= 18,]
+
+# Relevel factors by defining reference for line and generation
+dds$line <- relevel(dds$line, ref = "control")
+dds$generation <- relevel(dds$generation, ref = "G1")
+
+# Run the DESeq model to test for differential gene expression
+dds <- DESeq(dds)
+
+# List the results you've generated
+resultsNames(dds)
+# Copy the results names 
+```
+
+### Set up treatment-only pairwise contrasts between generations
+
+```{r}
+# Extract only generation-specific treatment effects with numeric contrast vectors
+
+# Control G1 vs Treatment G1 (Plastic Response)
+res_G1vG1 <- results(dds, name = "line_treatment_vs_control", alpha = 0.05)
+res_G1vG1 <- res_G1vG1[order(res_G1vG1$padj), ]
+res_G1vG1 <- res_G1vG1[!is.na(res_G1vG1$padj), ]
+degs_G1vG1 <- row.names(res_G1vG1[res_G1vG1$padj < 0.05, ])
+
+# G1 vs G2 (Intergenerational Effect)
+res_G1vG2 <- results(dds, contrast = c("generation", "G1", "G2"), alpha = 0.05)
+res_G1vG2 <- res_G1vG2[order(res_G1vG2$padj), ]
+res_G1vG2 <- res_G1vG2[!is.na(res_G1vG2$padj), ]
+degs_G1vG2 <- row.names(res_G1vG2[res_G1vG2$padj < 0.05, ])
+
+# G2 vs G3 (Transgenerational Effect)
+res_G2vG3 <- results(dds, contrast = c("generation", "G2", "G3"), alpha = 0.05)
+res_G2vG3 <- res_G2vG3[order(res_G2vG3$padj), ]
+res_G2vG3 <- res_G2vG3[!is.na(res_G2vG3$padj), ]
+degs_G2vG3 <- row.names(res_G2vG3[res_G2vG3$padj < 0.05, ])
+
+# G3 vs G4 (Transgenerational Effect)
+res_G3vG4 <- results(dds, contrast = c("generation", "G3", "G4"), alpha = 0.05)
+res_G3vG4 <- res_G3vG4[order(res_G3vG4$padj), ]
+res_G3vG4 <- res_G3vG4[!is.na(res_G3vG4$padj), ]
+degs_G3vG4 <- row.names(res_G3vG4[res_G3vG4$padj < 0.05, ])
+
+summary(res_G1vG1)
+summary(res_G1vG2)
+summary(res_G2vG3)
+summary(res_G3vG4)
+```
+
+## Prepare contrasts and GO terms for TopGO
+
+```{r}
+# Define contrasts
+contrast_list <- list(
+  "Control G1 vs. Treatment G1" = res_G1vG1,
+  "Both G1 vs. Both G2" = res_G1vG2,
+  "Both G2 vs. Both G3" = res_G2vG3,
+  "Both G3 vs. Both G4" = res_G3vG4
+)
+
+# Import GO terms file
+tonsa_go <- read.delim("Genes_GO_terms_output.tsv", header = TRUE) %>%
+  slice(-c(1,2)) %>%  # remove header rows if present
+  na.omit()  # remove missing GO annotations
+
+# Create gene2GO list
+gene2GO <- tonsa_go %>%
+  filter(!is.na(GO) & GO != "") %>%
+  group_by(geneID) %>%
+  summarise(GO = list(unique(GO)), .groups = "drop") %>%
+  with(setNames(GO, geneID))
+
+# Split semicolon-separated GO terms
+gene2GO <- lapply(gene2GO, function(x) unlist(strsplit(x, ";")))
+```
+
+## Run TopGO for each contrast
+
+```{r}
+library(topGO)
+library(GO.db)
+library(dplyr)
+library(ggplot2)
+library(purrr)
+
+# Define reusable TopGO function
+run_topGO_plot <- function(res_obj, contrast_name, gene2GO, outfile_prefix="topGO") {
+  
+  # Convert results to data frame and add geneID
+  res_df <- as.data.frame(res_obj)
+  res_df$geneID <- rownames(res_df)
+  
+  # Keep only significant DEGs with GO annotations
+  res_GO_sig <- res_df %>%
+    filter(padj < 0.05 & abs(log2FoldChange) > 1 & geneID %in% names(gene2GO))
+  
+  # Create geneList for TopGO: 1 = DEG, 0 = not DEG
+  all_genes <- names(gene2GO)
+  geneList <- setNames(as.integer(all_genes %in% res_GO_sig$geneID), all_genes)
+  
+  # Build TopGO object
+  GOdata <- new("topGOdata",
+                description = paste0("DEGs for ", contrast_name),
+                ontology = "BP",
+                allGenes = geneList,
+                geneSel = function(x) x == 1,
+                nodeSize = 5,
+                annot = annFUN.gene2GO,
+                gene2GO = gene2GO)
+  
+  # Run enrichment test
+  result <- runTest(GOdata, algorithm = "parentChild", statistic = "fisher")
+  
+  # Convert results to table
+  res_table <- GenTable(GOdata, classicFisher = result,
+                        topNodes = length(usedGO(GOdata))) %>%
+    mutate(classicFisher = as.numeric(classicFisher),
+           Annotated = as.numeric(Annotated),
+           Significant = as.numeric(Significant))
+  
+  # Filter GO terms
+  filtered_GO_results <- res_table %>%
+    filter(Annotated >= 5 & Annotated < 500) %>%
+    arrange(classicFisher)
+  
+  # Prepare REVIGO input
+  revigo_input <- filtered_GO_results %>%
+    select(GO.ID, classicFisher) %>%
+    filter(classicFisher < 0.05)
+  colnames(revigo_input) <- c("GO.ID", "pValue")
+  
+  # Write REVIGO file
+  outfile <- paste0(outfile_prefix, "_", contrast_name, "_REVIGO.txt")
+  write.table(revigo_input, file = outfile, sep = "\t", row.names = FALSE, quote = FALSE)
+  
+  # Generate plot
+  p <- filtered_GO_results %>%
+    slice_head(n = 30) %>%
+    ggplot(aes(x = -log10(classicFisher),
+               y = reorder(Term, -log10(classicFisher)),
+               size = Significant,
+               color = -log10(classicFisher))) +
+    geom_point(alpha = 0.8) +
+    scale_color_gradientn(colors = c("pink", "orchid", "purple", "purple4"),
+                          name = "-log10(p-value)") +
+    scale_size_continuous(name = "# Significant Genes") +
+    xlab("-log10-classicFisher") +
+    ylab("Biological Function") +
+    ggtitle(paste0("TopGO: ", contrast_name)) +
+    theme_minimal() +
+    theme(plot.margin = margin(10, 100, 10, 10),
+          axis.text.y = element_text(size = 10, hjust = 1)) +
+    coord_cartesian(clip = "off")
+  
+  return(p)
+}
+
+# Run TopGO for all contrasts
+topGO_plots <- map2(contrast_list, names(contrast_list),
+                    ~run_topGO_plot(.x, .y, gene2GO))
+
+# Display plots
+topGO_plots
+
+# Save plots to files
+walk2(topGO_plots, names(topGO_plots),
+      ~ggsave(filename = paste0("TopGO_", .y, ".png"), plot = .x,
+              width = 8, height = 10, dpi = 300))
+
+```
