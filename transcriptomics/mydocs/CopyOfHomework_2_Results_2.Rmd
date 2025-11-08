@@ -72,22 +72,67 @@ res_G1vG1 <- res_G1vG1[!is.na(res_G1vG1$padj), ]
 degs_G1vG1 <- row.names(res_G1vG1[res_G1vG1$padj < 0.05, ])
 
 # G1 vs G2 (Intergenerational Effect)
-res_G1vG2 <- results(dds, contrast = c("generation", "G1", "G2"), alpha = 0.05)
+res_G1vG2 <- results(
+  dds,
+  list(
+    c("generation_G2_vs_G1", "generationG2.linetreatment")),
+  alpha = 0.05)
 res_G1vG2 <- res_G1vG2[order(res_G1vG2$padj), ]
 res_G1vG2 <- res_G1vG2[!is.na(res_G1vG2$padj), ]
 degs_G1vG2 <- row.names(res_G1vG2[res_G1vG2$padj < 0.05, ])
 
-# G2 vs G3 (Transgenerational Effect)
-res_G2vG3 <- results(dds, contrast = c("generation", "G2", "G3"), alpha = 0.05)
+# Treatment G2 vs Treatment G3 (Transgenerational Effect)
+res_G2vG3 <- results(
+  dds,
+  list(
+    c("generation_G3_vs_G1", "generationG3.linetreatment"),
+    c("generation_G2_vs_G1", "generationG2.linetreatment")), 
+  alpha = 0.05)
 res_G2vG3 <- res_G2vG3[order(res_G2vG3$padj), ]
 res_G2vG3 <- res_G2vG3[!is.na(res_G2vG3$padj), ]
 degs_G2vG3 <- row.names(res_G2vG3[res_G2vG3$padj < 0.05, ])
 
 # G3 vs G4 (Transgenerational Effect)
-res_G3vG4 <- results(dds, contrast = c("generation", "G3", "G4"), alpha = 0.05)
+res_G3vG4 <- results(
+  dds,
+  list(
+    c("generation_G4_vs_G1", "generationG4.linetreatment"),
+    c("generation_G3_vs_G1", "generationG3.linetreatment")), 
+  alpha = 0.05)
 res_G3vG4 <- res_G3vG4[order(res_G3vG4$padj), ]
 res_G3vG4 <- res_G3vG4[!is.na(res_G3vG4$padj), ]
 degs_G3vG4 <- row.names(res_G3vG4[res_G3vG4$padj < 0.05, ])
+
+# Function to extract the number of up-regulated and down-regulated genes in the constrasts as well as the mean log2 fold changes for each group
+get_mean_lfc <- function(res_obj, contrast_name) {
+  res_df <- as.data.frame(res_obj)
+  res_df <- res_df[!is.na(res_df$padj), ]
+  
+  # Identify significantly up-regulated and down-regulated genes
+  up_genes <- res_df %>% filter(padj < 0.05, log2FoldChange > 0)
+  down_genes <- res_df %>% filter(padj < 0.05, log2FoldChange < 0)
+  
+  # Compute means
+  mean_up <- mean(up_genes$log2FoldChange, na.rm = TRUE)
+  mean_down <- mean(down_genes$log2FoldChange, na.rm = TRUE)
+  
+  # Return caclculations as a named vector
+  data.frame(
+    Contrast = contrast_name,
+    Upregulated_Mean_LFC = mean_up,
+    Downregulated_Mean_LFC = mean_down,
+    Num_Up = nrow(up_genes),
+    Num_Down = nrow(down_genes)
+  )
+}
+
+# Apply function to all contrasts
+mean_lfc_summary <- map2_dfr(contrast_list, names(contrast_list),
+                               ~get_mean_lfc(.x, .y))
+
+# Display results summary
+mean_lfc_summary
+
 ```
 
 ## Prepare contrasts and GO terms for TopGO
@@ -96,9 +141,9 @@ degs_G3vG4 <- row.names(res_G3vG4[res_G3vG4$padj < 0.05, ])
 # Define contrasts
 contrast_list <- list(
   "Control G1 vs. Treatment G1" = res_G1vG1,
-  "Both G1 vs. Both G2" = res_G1vG2,
-  "Both G2 vs. Both G3" = res_G2vG3,
-  "Both G3 vs. Both G4" = res_G3vG4
+  "Treatment G1 vs. Treatment G2" = res_G1vG2,
+  "Treatment G2 vs. Treatment G3" = res_G2vG3,
+  "Treatment G3 vs. Treatment G4" = res_G3vG4
 )
 
 # Import GO terms file
