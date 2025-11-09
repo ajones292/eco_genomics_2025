@@ -125,3 +125,21 @@ Assessed correlation between module eigengenes and the upper lethal temperature 
 Plotted the eigengene values by treatment and line conditions and found that the eigenvalues for both the grey60 and cyan modules differed in G1 and G2, flipping expression between the two generations.
 
 Gene ontology functional enrichment and visualization in REVIGO revealed there was some association with transcriptional/translational regulation as well as with phosphate-containing protein metabolic processes.
+
+### Homework 2
+
+Created an RMarkdown file to prepare run DESeq2, prepare contrasts, and generate TopGO results:
+
+`~/projects/eco_genomics_2025/transcriptomics/mydocs/Homework_2_Results.Rmd`
+
+Used scripts from class activities to run DESeq2, prepare contrasts, and create a results summary of DEGs.
+
+Mean and median logFC was calculated in the significantly up-regulated and down-regulated genes to summarize the magnitude of differential gene expression and compare the distributions of DEGs between contrasts.
+
+While volcano and TopGO plots were structured to resemble those ran in class, generative AI was used to help create functions to loop through each contrast.
+
+To visualize directionality in the functional gene enrichment, up-regulated and down-regulated genes were first subset in each contrast.
+
+Volcano and TopGO plots as well as REVIGO-ready files were saved to a new output folder:
+
+`~/projects/eco_genomics_2025/transcriptomics/mydata/Homework_2_Plots/`
