@@ -21,6 +21,7 @@ library(GO.db)
 library(dplyr)
 library(ggplot2)
 library(tidyr)
+library(purrr)
 ```
 
 ## Import counts matrix and sample distibution table
@@ -59,53 +60,82 @@ resultsNames(dds)
 # Copy the results names 
 ```
 
-### Set up treatment-only pairwise contrasts between generations
+### Set up contrasts between generations
 
 ```{r}
 # Extract only generation-specific treatment effects with numeric contrast vectors
 
-# Treatment G1 vs Treatment G2
-res_treatment_G1vG2 <- results(dds, contrast = c(0,1,0,0,0,1,0,0), alpha = 0.05)
-res_treatment_G1vG2 <- res_treatment_G1vG2[order(res_treatment_G1vG2$padj),]
-res_treatment_G1vG2 <- res_treatment_G1vG2[!is.na(res_treatment_G1vG2$padj),]
-degs_treatment_G1vG2 <- row.names(res_treatment_G1vG2[res_treatment_G1vG2$padj < 0.05,])
+# Control G1 vs Treatment G1 (Plastic Response)
+res_G1vG1 <- results(dds, name = "line_treatment_vs_control", alpha = 0.05)
+res_G1vG1 <- res_G1vG1[order(res_G1vG1$padj), ]
+res_G1vG1 <- res_G1vG1[!is.na(res_G1vG1$padj), ]
+degs_G1vG1 <- row.names(res_G1vG1[res_G1vG1$padj < 0.05, ])
 
-# Treatment G1 vs Treatment G3
-res_treatment_G1vG3 <- results(dds, contrast = c(0,0,1,0,0,0,1,0), alpha = 0.05)
-res_treatment_G1vG3 <- res_treatment_G1vG3[order(res_treatment_G1vG3$padj),]
-res_treatment_G1vG3 <- res_treatment_G1vG3[!is.na(res_treatment_G1vG3$padj),]
-degs_treatment_G1vG3 <- row.names(res_treatment_G1vG3[res_treatment_G1vG3$padj < 0.05,])
+# G1 vs G2 (Intergenerational Effect)
+res_G1vG2 <- results(
+  dds,
+  list(
+    c("generation_G2_vs_G1", "generationG2.linetreatment")),
+  alpha = 0.05)
+res_G1vG2 <- res_G1vG2[order(res_G1vG2$padj), ]
+res_G1vG2 <- res_G1vG2[!is.na(res_G1vG2$padj), ]
+degs_G1vG2 <- row.names(res_G1vG2[res_G1vG2$padj < 0.05, ])
 
-# Treatment G1 vs Treatment G4
-res_treatment_G1vG4 <- results(dds, contrast = c(0,0,0,1,0,0,0,1), alpha = 0.05)
-res_treatment_G1vG4 <- res_treatment_G1vG4[order(res_treatment_G1vG4$padj),]
-res_treatment_G1vG4 <- res_treatment_G1vG4[!is.na(res_treatment_G1vG4$padj),]
-degs_treatment_G1vG4 <- row.names(res_treatment_G1vG4[res_treatment_G1vG4$padj < 0.05,])
+# Treatment G2 vs Treatment G3 (Transgenerational Effect)
+res_G2vG3 <- results(
+  dds,
+  list(
+    c("generation_G3_vs_G1", "generationG3.linetreatment"),
+    c("generation_G2_vs_G1", "generationG2.linetreatment")), 
+  alpha = 0.05)
+res_G2vG3 <- res_G2vG3[order(res_G2vG3$padj), ]
+res_G2vG3 <- res_G2vG3[!is.na(res_G2vG3$padj), ]
+degs_G2vG3 <- row.names(res_G2vG3[res_G2vG3$padj < 0.05, ])
 
-# Treatment G2 vs Treatment G3
-res_treatment_G2vG3 <- results(dds, contrast = c(0,-1,1,0,0,-1,1,0), alpha = 0.05)
-res_treatment_G2vG3 <- res_treatment_G2vG3[order(res_treatment_G2vG3$padj),]
-res_treatment_G2vG3 <- res_treatment_G2vG3[!is.na(res_treatment_G2vG3$padj),]
-degs_treatment_G2vG3 <- row.names(res_treatment_G2vG3[res_treatment_G2vG3$padj < 0.05,])
+# G3 vs G4 (Transgenerational Effect)
+res_G3vG4 <- results(
+  dds,
+  list(
+    c("generation_G4_vs_G1", "generationG4.linetreatment"),
+    c("generation_G3_vs_G1", "generationG3.linetreatment")), 
+  alpha = 0.05)
+res_G3vG4 <- res_G3vG4[order(res_G3vG4$padj), ]
+res_G3vG4 <- res_G3vG4[!is.na(res_G3vG4$padj), ]
+degs_G3vG4 <- row.names(res_G3vG4[res_G3vG4$padj < 0.05, ])
 
-# Treatment G2 vs Treatment G4
-res_treatment_G2vG4 <- results(dds, contrast = c(0,-1,0,1,0,0,-1,1), alpha = 0.05)
-res_treatment_G2vG4 <- res_treatment_G2vG4[order(res_treatment_G2vG4$padj),]
-res_treatment_G2vG4 <- res_treatment_G2vG4[!is.na(res_treatment_G2vG4$padj),]
-degs_treatment_G2vG4 <- row.names(res_treatment_G2vG4[res_treatment_G2vG4$padj < 0.05,])
+# Function to extract the number of up-regulated and down-regulated genes in the constrasts as well as the mean log2 fold changes for each group
+get_lfc_summary <- function(res_obj, contrast_name) {
+  res_df <- as.data.frame(res_obj)
+  res_df <- res_df[!is.na(res_df$padj), ]
+  
+  # Identify significantly up-regulated and down-regulated genes
+  up_genes <- res_df %>% filter(padj < 0.05, log2FoldChange > 0)
+  down_genes <- res_df %>% filter(padj < 0.05, log2FoldChange < 0)
+  
+  # Compute means and medians
+  mean_up <- mean(up_genes$log2FoldChange, na.rm = TRUE)
+  median_up <- median(up_genes$log2FoldChange, na.rm = TRUE)
+  mean_down <- mean(down_genes$log2FoldChange, na.rm = TRUE)
+  median_down <- median(down_genes$log2FoldChange, na.rm = TRUE)
+  
+  # Return summary statistics
+  data.frame(
+    Contrast = contrast_name,
+    Num_Up = nrow(up_genes),
+    Num_Down = nrow(down_genes),
+    Upregulated_Mean_LFC = mean_up,
+    Upregulated_Median_LFC = median_up,
+    Downregulated_Mean_LFC = mean_down,
+    Downregulated_Median_LFC = median_down
+  )
+}
 
-# Treatment G3 vs Treatment G4
-res_treatment_G3vG4 <- results(dds, contrast = c(0,0,-1,1,0,0,-1,1), alpha = 0.05)
-res_treatment_G3vG4 <- res_treatment_G3vG4[order(res_treatment_G3vG4$padj),]
-res_treatment_G3vG4 <- res_treatment_G3vG4[!is.na(res_treatment_G3vG4$padj),]
-degs_treatment_G3vG4 <- row.names(res_treatment_G3vG4[res_treatment_G3vG4$padj < 0.05,])
+# Apply function to all contrasts
+lfc_summary <- map2_dfr(contrast_list, names(contrast_list),
+                        ~get_lfc_summary(.x, .y))
 
-summary(res_treatment_G1vG2)
-summary(res_treatment_G1vG3)
-summary(res_treatment_G1vG4)
-summary(res_treatment_G2vG3)
-summary(res_treatment_G2vG4)
-summary(res_treatment_G3vG4)
+# Display results summary
+lfc_summary
 ```
 
 ## Prepare contrasts and GO terms for TopGO
@@ -113,18 +143,17 @@ summary(res_treatment_G3vG4)
 ```{r}
 # Define contrasts
 contrast_list <- list(
-  "G1vG2" = res_treatment_G1vG2,
-  "G1vG3" = res_treatment_G1vG3,
-  "G1vG4" = res_treatment_G1vG4,
-  "G2vG3" = res_treatment_G2vG3,
-  "G2vG4" = res_treatment_G2vG4,
-  "G3vG4" = res_treatment_G3vG4
+  "Control G1 vs. Treatment G1" = res_G1vG1,
+  "Treatment G1 vs. Treatment G2" = res_G1vG2,
+  "Treatment G2 vs. Treatment G3" = res_G2vG3,
+  "Treatment G3 vs. Treatment G4" = res_G3vG4
 )
 
 # Import GO terms file
-tonsa_go <- read.delim("Genes_GO_terms_output.tsv", header = TRUE) %>%
-  slice(-c(1,2)) %>%  # remove header rows if present
-  na.omit()  # remove missing GO annotations
+tonsa_go <- read.delim("Genes_GO_terms_output.tsv", header = TRUE)
+tonsa_go <- as.data.frame(tonsa_go)
+tonsa_go <- tonsa_go[-c(1,2), ]
+tonsa_go <- na.omit(tonsa_go)
 
 # Create gene2GO list
 gene2GO <- tonsa_go %>%
@@ -137,191 +166,157 @@ gene2GO <- tonsa_go %>%
 gene2GO <- lapply(gene2GO, function(x) unlist(strsplit(x, ";")))
 ```
 
-## Run topGO for each contrast 
+## Generate volvano plots to visualize abundance and directionality of differential genes expression
 
 ```{r}
-# Function to generate files for input REVIGO
-run_topGO_revigo <- function(res_obj, contrast_name, gene2GO, outfile_prefix="topGO") {
+# Define volcano plot function
+make_volcano_plot <- function(res_obj, contrast_name, lfc_thresh = 1, padj_thresh = 0.05) {
   
-  # Convert results to data frame and add geneID column from rownames
+  # Convert to data frame and remove NAs
   res_df <- as.data.frame(res_obj)
   res_df$geneID <- rownames(res_df)
-  res_df <- res_df[, c("geneID", setdiff(names(res_df), "geneID"))]
+  res_df <- res_df %>% filter(!is.na(padj))
   
-  # Identify DEGs that have GO annotations
-  res_GO <- res_df[res_df$geneID %in% tonsa_go$geneID, ]
+  # Add significance column for color mapping
+  res_df$significance <- "Not Sig"
+  res_df$significance[res_df$padj < 0.05 & res_df$log2FoldChange > 0] <- "Up"
+  res_df$significance[res_df$padj < 0.05 & res_df$log2FoldChange < 0] <- "Down"
   
-  # Keep only significant DEGs with GO annotations
-  res_GO_sig <- subset(res_df, padj < 0.05 & abs(log2FoldChange) > 1 & geneID %in% names(gene2GO))
-  
-  # Merge with GO annotations
-  tonsa_stat <- merge(res_GO_sig, tonsa_go, by = "geneID")
-  
-  # Create geneList for topGO: 1 = DEG, 0 = not DEG
-  all_genes <- names(gene2GO)
-  geneList <- setNames(as.integer(all_genes %in% res_GO_sig$geneID), all_genes)
-  
-  # Build TopGO object
-  GOdata <- new("topGOdata",
-                description = paste0("DEGs for ", contrast_name),
-                ontology = "BP",
-                allGenes = geneList,
-                geneSel = function(x) x == 1,
-                nodeSize = 5,
-                annot = annFUN.gene2GO,
-                gene2GO = gene2GO)
-  
-  # Test for enrichment
-  result <- runTest(GOdata, algorithm = "parentChild", statistic = "fisher")
-  
-  # Convert results to table
-  res_table <- GenTable(GOdata, classicFisher = result,
-                        topNodes = length(usedGO(GOdata))) %>%
-    mutate(classicFisher = as.numeric(classicFisher),
-           Annotated = as.numeric(Annotated),
-           Significant = as.numeric(Significant))
-  
-  # Filter GO terms
-  filtered_GO_results <- res_table %>%
-    filter(Annotated >= 5 & Annotated < 500) %>%
-    group_by(Term) %>%
-    slice_min(classicFisher, n = 1) %>%
-    ungroup() %>%
-    arrange(classicFisher)
-  
-  # Prepare REVIGO input
-  revigo_input <- filtered_GO_results[, c("GO.ID", "classicFisher")]
-  sigRes <- revigo_input[as.numeric(revigo_input$classicFisher) < 0.05, ]
-  colnames(sigRes) <- c("GO.ID", "pValue")
-  
-  # Write to file
-  outfile <- paste0(outfile_prefix, "_", contrast_name, "_REVIGO.txt")
-  write.table(sigRes, file = outfile, sep = "\t", row.names = FALSE, quote = FALSE)
-  
-  return(filtered_GO_results)
-}
-
-# Loop through all contrasts
-filtered_GO_results_list <- lapply(names(contrasts_list), function(cn) {
-  run_topGO_revigo(res_obj = contrasts_list[[cn]],
-                   contrast_name = cn,
-                   gene2GO = gene2GO,
-                   outfile_prefix = "topGO")
-})
-names(filtered_GO_results_list) <- names(contrasts_list)
-```
-
-```{r}
-library(topGO)
-library(GO.db)
-library(dplyr)
-library(ggplot2)
-library(purrr)
-
-### 1. Define a reusable TopGO function
-run_topGO_plot <- function(res_obj, contrast_name, tonsa_go, gene2GO) {
-  
-  # Convert results to data frame
-  res_df <- as.data.frame(res_obj)
-  res_df$geneID <- rownames(res_df)
-  
-  # Filter for DEGs with padj < 0.05 and |log2FC| > 1
-  res_sig <- subset(res_df, padj < 0.05 & abs(log2FoldChange) > 1)
-  
-  # Merge with GO annotations
-  tonsa_stat <- merge(res_sig, tonsa_go, by = "geneID")
-  
-  # Create gene list for topGO (1 = DEG, 0 = not DEG)
-  all_genes <- names(gene2GO)
-  geneList <- setNames(as.integer(all_genes %in% tonsa_stat$geneID), all_genes)
-  
-  # Build topGO object
-  GOdata <- new("topGOdata",
-                description = paste0("DEGs for ", contrast_name),
-                ontology = "BP",
-                allGenes = geneList,
-                geneSel = function(x) x == 1,
-                nodeSize = 5,
-                annot = annFUN.gene2GO,
-                gene2GO = gene2GO)
-  
-  # Run enrichment
-  result <- runTest(GOdata, algorithm = "parentChild", statistic = "fisher")
-  
-  # Convert to table and clean
-  res_table <- GenTable(GOdata, classicFisher = result,
-                        topNodes = length(usedGO(GOdata))) %>%
-    mutate(classicFisher = as.numeric(classicFisher),
-           Annotated = as.numeric(Annotated),
-           Significant = as.numeric(Significant)) %>%
-    filter(Annotated >= 5 & Annotated < 500) %>%
-    group_by(Term) %>%
-    slice_min(classicFisher, n = 1) %>%
-    ungroup() %>%
-    arrange(classicFisher)
-  
-  # Generate ggplot
-  p <- res_table %>%
-    slice_head(n = 30) %>%
-    ggplot(aes(x = -log10(classicFisher),
-               y = reorder(Term, -log10(classicFisher)),
-               size = Significant,
-               color = -log10(classicFisher))) +
-    geom_point(alpha = 0.8) +
-    scale_color_gradientn(
-      colors = c("pink", "orchid", "purple", "purple4"),
-      name = "-log10(p-value)"
+  # Create volcano plot
+  p <- ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) +
+    geom_point(alpha = 0.7, size = 2) +
+    scale_color_manual(values = c("Up" = "red", "Down" = "blue", "Not Sig" = "grey")) +
+    geom_vline(xintercept = c(-1, 1), linetype = "dashed", color = "black") +
+    geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "black") +
+    labs(
+      title = paste0("Volcano Plot: ", contrast_name),
+      x = expression(log[2]~Fold~Change),
+      y = expression(-log[10]~Adjusted~p~value)
     ) +
-    scale_size_continuous(name = "# Significant Genes") +
-    labs(title = paste("GO Enrichment for", contrast_name),
-         x = "-log10(classicFisher)", y = "Biological Function") +
-    theme_minimal() +
-    theme(plot.margin = margin(10, 100, 10, 10),
-          axis.text.y = element_text(size = 10, hjust = 1)) +
-    coord_cartesian(clip = "off")
+    theme_bw(base_size = 16) +
+    theme(legend.title = element_blank(),
+          plot.title = element_text(hjust = 0.5))
   
   return(p)
 }
 
-
-### 2. Prepare GO annotation inputs (run once)
-tonsa_go <- read.delim("Genes_GO_terms_output.tsv", header = TRUE) %>%
-  slice(-c(1,2)) %>%
-  na.omit()
-
-gene2GO <- tonsa_go %>%
-  filter(!is.na(GO) & GO != "") %>%
-  group_by(geneID) %>%
-  summarise(GO = list(unique(GO)), .groups = "drop") %>%
-  with(setNames(GO, geneID))
-
-gene2GO <- lapply(gene2GO, function(x) unlist(strsplit(x, ";")))
-
-
-### 3. Run across all six contrasts
-contrast_list <- list(
-  "G1vG2" = res_treatment_G1vG2,
-  "G1vG3" = res_treatment_G1vG3,
-  "G1vG4" = res_treatment_G1vG4,
-  "G2vG3" = res_treatment_G2vG3,
-  "G2vG4" = res_treatment_G2vG4,
-  "G3vG4" = res_treatment_G3vG4
-)
-
-# Run TopGO and create plots for each contrast
-topGO_plots <- map2(contrast_list, names(contrast_list),
-                    ~run_topGO_plot(.x, .y, tonsa_go, gene2GO))
-
-
-### 4. Display plots or save them
-# To display all plots in sequence:
-topGO_plots
-
-# Or save them to files
-walk2(topGO_plots, names(topGO_plots),
-      ~ggsave(filename = paste0("TopGO_", .y, ".png"), plot = .x,
-              width = 8, height = 10, dpi = 300))
-
-```
+# Generate and save volcano plots for all contrasts
+walk2(contrast_list, names(contrast_list), function(res_obj, contrast_name) {
+  
+  # Create the plot
+  p <- make_volcano_plot(res_obj, contrast_name)
+  
+  # Save it as PNG
+  ggsave(
+    filename = paste0("Volcano_", gsub(" ", "_", contrast_name), ".png"),
+    plot = p, width = 8, height = 6, dpi = 300)
+})
 ```
 
+## Run TopGO for each contrast while subsetting up-regulated and down-regulated genes
+
+```{r}
+# Define TopGO function
+run_topGO_plot <- function(res_obj, contrast_name, gene2GO, outfile_prefix="topGO") {
+  
+  # Convert results to data frame and add geneID
+  res_df <- as.data.frame(res_obj)
+  res_df$geneID <- rownames(res_df)
+  
+  # Split DEGs into up-regulated and down-regulated subsets
+  res_up <- res_df %>%
+    filter(padj < 0.05 & log2FoldChange > 1 & geneID %in% names(gene2GO))
+  
+  res_down <- res_df %>%
+    filter(padj < 0.05 & log2FoldChange < -1 & geneID %in% names(gene2GO))
+  
+  # Define internal TopGO function
+  run_topGO_sub <- function(res_sig, direction_label, color_scheme) {
+    if (nrow(res_sig) == 0) return(NULL)
+    
+    # Create geneList for TopGO: 1 = DEG, 0 = not DEG
+    all_genes <- names(gene2GO)
+    geneList <- setNames(as.integer(all_genes %in% res_sig$geneID), all_genes)
+    
+    # Build TopGO object
+    GOdata <- new("topGOdata",
+                  description = paste0("DEGs for ", contrast_name, " (", direction_label, ")"),
+                  ontology = "BP",
+                  allGenes = geneList,
+                  geneSel = function(x) x == 1,
+                  nodeSize = 5,
+                  annot = annFUN.gene2GO,
+                  gene2GO = gene2GO)
+    
+    # Run enrichment test
+    result <- runTest(GOdata, algorithm = "parentChild", statistic = "fisher")
+    
+    # Convert results to table
+    res_table <- GenTable(GOdata, classicFisher = result,
+                          topNodes = length(usedGO(GOdata))) %>%
+      mutate(classicFisher = as.numeric(classicFisher),
+             Annotated = as.numeric(Annotated),
+             Significant = as.numeric(Significant))
+    
+    # Filter GO terms
+    filtered_GO_results <- res_table %>%
+      filter(Annotated >= 5 & Annotated < 500) %>%
+      arrange(classicFisher)
+    
+    # Prepare REVIGO input
+    revigo_input <- filtered_GO_results %>%
+      select(GO.ID, classicFisher) %>%
+      filter(classicFisher < 0.05)
+    colnames(revigo_input) <- c("GO.ID", "pValue")
+    
+    # Write REVIGO file
+    outfile <- paste0(outfile_prefix, "_", contrast_name, "_", direction_label, "_REVIGO.txt")
+    write.table(revigo_input, file = outfile, sep = "\t", row.names = FALSE, quote = FALSE)
+    
+    # Generate TopGO plot
+    p <- filtered_GO_results %>%
+      slice_head(n = 30) %>%
+      ggplot(aes(x = -log10(classicFisher),
+                 y = reorder(Term, -log10(classicFisher)),
+                 size = Significant,
+                 color = -log10(classicFisher))) +
+      geom_point(alpha = 0.8) +
+      scale_color_gradientn(colors = color_scheme,
+                            name = "-log10(p-value)") +
+      scale_size_continuous(name = "# Significant Genes") +
+      xlab("-log10-classicFisher") +
+      ylab("Biological Function") +
+      ggtitle(paste0("TopGO: ", contrast_name, " (", direction_label, ")")) +
+      theme_minimal() +
+      theme(
+        plot.title = element_text(hjust = 0, size = 16, face = "bold"),
+        plot.title.position = "plot",          
+        plot.margin = margin(10, 40, 10, 10),
+        axis.text.y = element_text(size = 10, hjust = 1)
+        ) +
+      coord_cartesian(clip = "off")
+
+    return(p)
+  }
+  
+  # Run TopGO for up-regulated and down-regulated subsets
+  p_up <- run_topGO_sub(res_up, "Upregulated", c("pink", "orchid", "purple", "purple4"))
+  p_down <- run_topGO_sub(res_down, "Downregulated", c("skyblue", "lightblue3", "blue3", "navy"))
+  
+  return(list(up = p_up, down = p_down))
+}
+
+# Run TopGO for all contrasts and save plots
+walk2(contrast_list, names(contrast_list), function(res_obj, contrast_name) {
+  
+  # Run TopGO
+  plots <- run_topGO_plot(res_obj, contrast_name, gene2GO)
+  
+  # Save plots of up-regulated and down-regulated genes
+  ggsave(paste0("TopGO_", contrast_name, "_upregulated.png"),
+         plot = plots$up, width = 8, height = 6, dpi = 300)
+  
+  ggsave(paste0("TopGO_", contrast_name, "_downregulated.png"),
+         plot = plots$down, width = 8, height = 6, dpi = 300)
+})
+```
