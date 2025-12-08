@@ -1,0 +1,17 @@
+[M::mm_idx_gen::9.883*1.45] collected minimizers
+[M::mm_idx_gen::12.855*1.79] sorted minimizers
+[M::main::14.278*1.71] loaded/built the index for 28 target sequence(s)
+[M::mm_idx_stat] kmer size: 15; skip: 10; is_hpc: 0; #seq: 28
+[M::mm_idx_stat::14.687*1.69] distinct minimizers: 37202558 (59.38% are singletons); average occurrences: 3.937; average spacing: 5.323; total length: 779754176
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -d /users/a/j/ajones76/projects/eco_genomics_2025/final_project/acar2.mmi /gpfs1/cl/ecogen/pbio6800/GroupProjects/tripods/references/acar2_round_2_trimmed.fasta
+[M::main] Real time: 14.748 sec; CPU: 24.824 sec; Peak RSS: 3.459 GB
+[WARNING][1;31m Indexing parameters (-k, -w or -H) overridden by parameters used in the prebuilt index.[0m
+[M::main::1.638*0.99] loaded/built the index for 28 target sequence(s)
+[M::mm_mapopt_update::2.237*0.99] mid_occ = 734
+[M::mm_idx_stat] kmer size: 15; skip: 10; is_hpc: 0; #seq: 28
+[M::mm_idx_stat::2.632*0.99] distinct minimizers: 37202558 (59.38% are singletons); average occurrences: 3.937; average spacing: 5.323; total length: 779754176
+[M::worker_pipeline::42.752*9.17] mapped 119439 sequences
+[M::main] Version: 2.28-r1209
+[M::main] CMD: minimap2 -t 10 -ax splice /users/a/j/ajones76/projects/eco_genomics_2025/final_project/acar2.mmi /gpfs1/cl/ecogen/pbio6800/GroupProjects/tripods/references/trinity.trimmomatic.above500.noPhiX.fasta
+[M::main] Real time: 42.782 sec; CPU: 391.916 sec; Peak RSS: 6.259 GB

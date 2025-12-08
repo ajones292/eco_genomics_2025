@@ -111,7 +111,7 @@ degs_G1_CvT <- rownames(resG1_CvT[resG1_CvT$padj < 0.05, ])
 ```{r, warning = FALSE}
 # Import minimap2 BED with genomic positions for every gene mapped to the reference genome from the reference transcriptome (generated from tonsa_mapping.sh)
 genes_df <- read.table(
-  "RepeatMasker/trinity_to_genome.bed", sep="\t", header=FALSE,
+  "MiniMap2/trinity_to_genome.bed", sep="\t", header=FALSE,
   col.names=c("chr", "start", "end", "gene", "score", "strand")
 )
 
@@ -402,7 +402,12 @@ for (fam in enriched_families) {
   te_sequences[[fam]] <- seqs
   
   # Write FASTA containing TE sequences
-  writeXStringSet(seqs, filepath = paste0("TE_family_", fam, ".fasta"))
+  writeXStringSet(seqs, 
+                  filepath = paste0("MotifMatchr", 
+                                    "/", 
+                                    "TE_family_", 
+                                    fam, 
+                                    ".fasta"))
 }
 ```
 

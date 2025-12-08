@@ -6,9 +6,9 @@ module load gcc sambamba
 module load gcc bedtools2
 
 # Define paths
-SAM="/users/a/j/ajones76/projects/eco_genomics_2025/final_project/trinity_to_genome.sam"
+SAM="/users/a/j/ajones76/projects/eco_genomics_2025/final_project/mydata/MiniMap2/trinity_to_genome.sam"
 BASENAME=$(basename "$SAM" .sam)
-OUTDIR="/users/a/j/ajones76/projects/eco_genomics_2025/final_project"
+OUTDIR="/users/a/j/ajones76/projects/eco_genomics_2025/final_project/mydata/MiniMap2"
 SCRATCH="/users/a/j/ajones76/scratch"
 
 cd $OUTDIR

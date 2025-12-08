@@ -36,7 +36,7 @@ module load gcc minimap2
 # Define paths
 GENOME="/gpfs1/cl/ecogen/pbio6800/GroupProjects/tripods/references/acar2_round_2_trimmed.fasta"
 TRANSCRIPTOME="/gpfs1/cl/ecogen/pbio6800/GroupProjects/tripods/references/trinity.trimmomatic.above500.noPhiX.fasta"
-OUTDIR="/users/a/j/ajones76/projects/eco_genomics_2025/final_project"
+OUTDIR="/users/a/j/ajones76/projects/eco_genomics_2025/final_project/mydata/MiniMap2"
 OUTSAM="${OUTDIR}/trinity_to_genome.sam"
 INDEX="${OUTDIR}/acar2.mmi"
 
