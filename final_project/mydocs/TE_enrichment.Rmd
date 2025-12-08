@@ -484,14 +484,14 @@ top_motifs <- motif_summary %>%
 # Extract top motif IDs
 top_motifs_ids <- top_motifs$motif_id
 
+# Extract motif names from the JASPAR PWM
+motif_names <- sapply(jaspar_pwms, function(x) x@name)
+names(motif_names) <- names(jaspar_pwms)
+
 # Filter motif summary to top motif hits
 motif_summary_top <- motif_summary %>%
   filter(!is.na(motif_id), motif_id %in% top_motifs_ids) %>%
   mutate(motif_name = motif_names[motif_id])
-
-# Extract motif names from the JASPAR PWM
-motif_names <- sapply(jaspar_pwms, function(x) x@name)
-names(motif_names) <- names(jaspar_pwms)
 
 # Compute the number of TE copies in each TE family
 te_family_sizes <- sapply(te_sequences, length)
