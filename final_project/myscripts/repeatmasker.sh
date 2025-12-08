@@ -32,6 +32,6 @@
 module purge
 module load gcc tetools
 
-cd /users/a/j/ajones76/projects/eco_genomics_2025/final_project/mydata
+cd /users/a/j/ajones76/projects/eco_genomics_2025/final_project/mydata/RepeatMasker
 
 RepeatMasker -pa 36 -gff -lib Dfam-RepeatMasker.lib acar2_round_2_trimmed.fasta
