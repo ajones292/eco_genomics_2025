@@ -49,3 +49,5 @@ Position frequency matrices of consensus insect transcription factor binding mot
 `~/projects/eco_genomics_2025/final_project/mydata/MotifMatchr/JASPAR2026_CORE_insects_non-redundant_pfms_jaspar.txt`
 
 Processed matrices and for scanning transposable element sequences of each enriched family with the R package motifmatchr.
+
+Generative AI was used for debugging in this portion of the code and ensuring I had properly handled the motif calling.
